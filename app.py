@@ -1285,7 +1285,7 @@ def render_sprint_attendance_fragment(sp: dict, vr_students: list, att_records: 
 
     edited = st.data_editor(
         pd.DataFrame(merged_rows)[
-            ["นักเรียน", "สถานะ", "ได้คะแนน", "คะแนนเต็ม", "Feedback จากครู", "Worksheet นักเรียน"]
+            ["นักเรียน", "สถานะ", "ได้คะแนน", "คะแนนเต็ม", "Worksheet นักเรียน"]
         ],
         hide_index=True,
         use_container_width=True,
@@ -1302,7 +1302,6 @@ def render_sprint_attendance_fragment(sp: dict, vr_students: list, att_records: 
             "คะแนนเต็ม":       st.column_config.NumberColumn(
                 "คะแนนเต็ม", min_value=0.0, step=1.0, width="small"
             ),
-            "Feedback จากครู": st.column_config.TextColumn("Feedback จากครู"),
             "Worksheet นักเรียน": st.column_config.LinkColumn(
                 "Worksheet นักเรียน",
                 help="วาง link worksheet ที่นักเรียนส่ง",
@@ -1335,7 +1334,7 @@ def render_sprint_attendance_fragment(sp: dict, vr_students: list, att_records: 
             upsert_sprint_attendance(
                 sprint_id, stu_id,
                 row["สถานะ"],
-                row.get("Feedback จากครู", ""),
+                merged_rows[i_row].get("Feedback จากครู", ""),  # คงค่า feedback เดิมจากครู
                 row.get("Worksheet นักเรียน", ""),
             )
             nick = merged_rows[i_row]["นักเรียน"]
@@ -1478,6 +1477,12 @@ with st.sidebar:
                     st.session_state.vr_detail_id = None
                     st.session_state.viewing_vr   = None
                     st.rerun()
+
+    # ── Logout ───────────────────────────────────────
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("🔓 ออกจากระบบ", use_container_width=True, key="sidebar_logout"):
+        st.session_state.authenticated = False
+        st.rerun()
 
     # ── Footer ────────────────────────────────────────
     _mode = "Supabase" if _os.getenv("SUPABASE_URL") else "Local"
