@@ -1370,6 +1370,45 @@ def render_sprint_attendance_fragment(sp: dict, vr_students: list, att_records: 
 
 
 # ─────────────────────────────────────────
+# LOGIN GATE
+# ─────────────────────────────────────────
+def _check_login():
+    if st.session_state.get("authenticated"):
+        return
+    # ซ่อน sidebar ในหน้า login
+    st.markdown("""
+        <style>
+        [data-testid="stSidebar"] { display: none !important; }
+        [data-testid="stAppViewContainer"] { background: #F1F5F9; }
+        </style>
+    """, unsafe_allow_html=True)
+
+    _, col, _ = st.columns([2, 3, 2])
+    with col:
+        st.markdown("<br><br><br>", unsafe_allow_html=True)
+        st.markdown(
+            "<h2 style='text-align:center;color:#1E3A8A;margin-bottom:4px'>🏆 Victory Academy</h2>"
+            "<p style='text-align:center;color:#64748B;margin-bottom:2rem;font-size:0.95rem'>Admin System</p>",
+            unsafe_allow_html=True,
+        )
+        with st.container(border=True):
+            st.markdown("#### เข้าสู่ระบบ")
+            _uname = st.text_input("Username", placeholder="กรอก username", key="_login_user")
+            _pw    = st.text_input("Password", type="password", placeholder="กรอก password", key="_login_pw")
+            if st.button("เข้าสู่ระบบ", type="primary", use_container_width=True):
+                _ok_u = st.secrets.get("APP_USERNAME", "")
+                _ok_p = st.secrets.get("APP_PASSWORD", "")
+                if _uname == _ok_u and _pw == _ok_p:
+                    st.session_state.authenticated = True
+                    st.rerun()
+                else:
+                    st.error("Username หรือ Password ไม่ถูกต้อง")
+    st.stop()
+
+_check_login()
+
+
+# ─────────────────────────────────────────
 # SIDEBAR
 # ─────────────────────────────────────────
 import os as _os
