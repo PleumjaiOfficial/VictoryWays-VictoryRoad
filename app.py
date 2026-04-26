@@ -25,6 +25,7 @@ from utils.db_client import (
     get_student_payments, upsert_student_payment,
     get_teacher_expenses, upsert_teacher_expense, delete_teacher_expense,
     update_sprint, get_sprint_attendance_batch, upsert_sprint_attendance,
+    get_sprint_cover_url, upload_sprint_cover, DEFAULT_COVER_BY_SUBJECT,
 )
 from utils.analytics import (
     load_scores_df, build_subject_bar_chart, summarize_by_subject,
@@ -266,6 +267,7 @@ def new_sprint() -> dict:
         "done":           False,
         "student_scores": {},
         "order_index":    0,
+        "cover_photo":    "",
     }
 
 
@@ -870,7 +872,7 @@ def render_sprint_card(sprint: dict, i: int, sprints: list,
             sprint["sprint_type"] = SPRINT_TO_KEY[chosen]
         with c1:
             sprint["name"] = st.text_input(
-                "ชื่อ Sprint", value=sprint["name"],
+                f"ชื่อ {label_prefix}", value=sprint["name"],
                 key=f"sn_{p}", placeholder="เช่น เศษส่วน", on_change=_keep_open)
         with c2:
             if teachers is None:
@@ -932,6 +934,41 @@ def render_sprint_card(sprint: dict, i: int, sprints: list,
                 placeholder="วาง Worksheet link", on_change=_keep_open)
             if sprint["ws_link"]:
                 st.markdown(f"[เปิด Worksheet]({sprint['ws_link']})")
+
+        # ── Cover Photo ──────────────────────────────────
+        st.markdown("**Cover Photo**")
+        _cv_url = get_sprint_cover_url(sprint)
+        _cv_col_img, _cv_col_up = st.columns([1, 3])
+        with _cv_col_img:
+            if _cv_url:
+                st.image(_cv_url, use_container_width=True)
+            else:
+                st.caption("(ไม่มีรูป)")
+        with _cv_col_up:
+            _cv_uploader = st.file_uploader(
+                "อัปโหลด cover photo ใหม่",
+                type=["png", "jpg", "jpeg"],
+                key=f"cover_up_{p}",
+                on_change=_keep_open,
+            )
+            if _cv_uploader is not None:
+                if st.button("📤 บันทึก cover", key=f"cover_save_{p}"):
+                    _ext   = _cv_uploader.name.rsplit(".", 1)[-1].lower()
+                    _fname = f"custom_{sprint['id']}.{_ext}"
+                    _url   = upload_sprint_cover(
+                        _cv_uploader.read(), _fname, f"image/{_ext}"
+                    )
+                    if _url:
+                        sprint["cover_photo"] = _url
+                        st.success("✅ อัปโหลดแล้ว!")
+                        _keep_open()
+                    else:
+                        st.error("อัปโหลดไม่สำเร็จ — ตรวจสอบ bucket permissions")
+            else:
+                _sub_name = sprint.get("subject", "")
+                _def_file = DEFAULT_COVER_BY_SUBJECT.get(_sub_name, "")
+                if _def_file and not sprint.get("cover_photo"):
+                    st.caption(f"📌 ใช้ default: `{_def_file}`")
 
         st.markdown("---")
         cu, cd, _, cx = st.columns([1, 1, 5, 2])
@@ -1384,10 +1421,13 @@ def _check_login():
 
     _, col, _ = st.columns([2, 3, 2])
     with col:
-        st.markdown("<br><br><br>", unsafe_allow_html=True)
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        import os as _los
+        _logo_login = _los.path.join(_los.path.dirname(__file__), "assets", "logos", "BDxVA.png")
+        if _los.path.exists(_logo_login):
+            st.image(_logo_login, use_container_width=True)
         st.markdown(
-            "<h2 style='text-align:center;color:#1E3A8A;margin-bottom:4px'>🏆 Victory Academy</h2>"
-            "<p style='text-align:center;color:#64748B;margin-bottom:2rem;font-size:0.95rem'>Admin System</p>",
+            "<p style='text-align:center;color:#64748B;margin:0.5rem 0 1.5rem;font-size:0.95rem'>Admin System</p>",
             unsafe_allow_html=True,
         )
         with st.container(border=True):

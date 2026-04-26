@@ -185,6 +185,57 @@ def _ss(key: str, default):
 
 
 # ─────────────────────────────────────────
+# Cover Photo helpers
+# ─────────────────────────────────────────
+COVER_PHOTO_BUCKET = "cover_photo_sprint"
+
+DEFAULT_COVER_BY_SUBJECT: dict[str, str] = {
+    "คณิตศาสตร์": "math_bd_logo.png",
+    "วิทยาศาสตร์": "sci_bd_logo.png",
+    "ภาษาอังกฤษ":  "eng_bd_logo.png",
+    "ภาษาไทย":     "thai_bd_logo.png",
+}
+
+
+def _build_cover_url(filename: str) -> str:
+    base = os.getenv("SUPABASE_URL", "").rstrip("/")
+    if not base or not filename:
+        return ""
+    return f"{base}/storage/v1/object/public/{COVER_PHOTO_BUCKET}/{filename}"
+
+
+def get_sprint_cover_url(sprint: dict) -> str:
+    """คืน URL รูป cover — ใช้ custom ถ้ามี ไม่งั้น default ตาม subject"""
+    custom = (sprint.get("cover_photo") or "").strip()
+    if custom:
+        return custom if custom.startswith("http") else _build_cover_url(custom)
+    filename = DEFAULT_COVER_BY_SUBJECT.get(sprint.get("subject", ""), "")
+    return _build_cover_url(filename)
+
+
+def upload_sprint_cover(file_bytes: bytes, filename: str,
+                        content_type: str = "image/png") -> str:
+    """Upload cover photo ขึ้น Supabase Storage, คืน public URL"""
+    if not _use_supabase():
+        return ""
+    try:
+        client = _get_client()
+        client.storage.from_(COVER_PHOTO_BUCKET).upload(
+            filename, file_bytes,
+            {"content-type": content_type, "upsert": "true"},
+        )
+        return _build_cover_url(filename)
+    except Exception:
+        try:
+            client.storage.from_(COVER_PHOTO_BUCKET).update(
+                filename, file_bytes, {"content-type": content_type},
+            )
+            return _build_cover_url(filename)
+        except Exception:
+            return ""
+
+
+# ─────────────────────────────────────────
 # Sprint helpers (Supabase)
 # ─────────────────────────────────────────
 
@@ -248,6 +299,7 @@ def _serialize_sprint(sp: dict, road_id: str, order_index: int,
         "done":             bool(sp.get("done", False)),
         "student_scores":   scores,
         "order_index":      order_index,
+        "cover_photo":      sp.get("cover_photo", ""),
     }
 
 
