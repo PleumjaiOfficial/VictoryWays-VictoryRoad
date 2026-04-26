@@ -232,6 +232,7 @@ def init_state():
         "form_sprints":        [],   # personal sprints (Personalize VR)
         "form_cohort_sprints": [],   # cohort parent sprints (Cohort VR)
         "form_vr_name":        "",
+        "form_vr_description": "",
         "form_vr_level":       LEVELS[5],
         "form_road_type":      "cohort",
         "form_students":       [],
@@ -1126,6 +1127,13 @@ def render_vr_form(mode: str = "create"):
                            index=0 if cur_rt == "cohort" else 1, horizontal=True)
         st.session_state.form_road_type = "cohort" if rt_lbl == "Cohort" else "personalize"
 
+    st.session_state.form_vr_description = st.text_area(
+        "คำอธิบาย Victory Road",
+        value=st.session_state.get("form_vr_description", ""),
+        placeholder="เช่น กลุ่มเรียนคณิตศาสตร์ ม.3 เน้นเตรียมสอบ O-NET ปี 2568",
+        height=80,
+    )
+
     road_type = st.session_state.form_road_type
 
     st.markdown("---")
@@ -1216,7 +1224,8 @@ def render_vr_form(mode: str = "create"):
                     cohort_sprints_to_save = []
 
                 payload = {
-                    "name":           st.session_state.form_vr_name,
+                    "name":        st.session_state.form_vr_name,
+                    "description": st.session_state.get("form_vr_description", ""),
                     "level":          st.session_state.form_vr_level,
                     "road_type":      road_type,
                     "sprints":        sprints_to_save,
@@ -1233,7 +1242,7 @@ def render_vr_form(mode: str = "create"):
                 st.session_state.update({
                     "vr_view": "list", "editing_vr": None,
                     "form_sprints": [], "form_cohort_sprints": [],
-                    "form_vr_name": "", "form_students": [],
+                    "form_vr_name": "", "form_vr_description": "", "form_students": [],
                     "page": "Victory Road",
                 })
                 st.rerun()
@@ -1242,7 +1251,7 @@ def render_vr_form(mode: str = "create"):
             st.session_state.update({
                 "vr_view": "list", "editing_vr": None,
                 "form_sprints": [], "form_cohort_sprints": [],
-                "form_vr_name": "", "page": "Victory Road",
+                "form_vr_name": "", "form_vr_description": "", "page": "Victory Road",
             })
             st.rerun()
 
@@ -1265,7 +1274,7 @@ def render_vr_form(mode: str = "create"):
             st.session_state.update({
                 "vr_view": "list", "editing_vr": None,
                 "form_sprints": [], "form_cohort_sprints": [],
-                "form_vr_name": "", "page": "Victory Road",
+                "form_vr_name": "", "form_vr_description": "", "page": "Victory Road",
             })
             st.rerun()
 
@@ -1712,11 +1721,13 @@ if st.session_state.page == "Victory Road":
                     col_info, col_btns = st.columns([5, 1])
                     with col_info:
                         not_started = len(all_sp) - finished - incoming
+                        _desc = vr.get("description", "")
                         st.markdown(
                             f"<div style='line-height:1.7'>"
                             f"<div style='font-size:1.05rem;font-weight:700;color:#14142A'>{vr['name']}</div>"
                             f"<div style='font-size:0.82rem;color:#888;margin-top:1px'>{rt_badge}  ·  {vr.get('level','')}</div>"
-                            f"<div style='font-size:0.82rem;color:#555;margin-top:2px'>"
+                            + (f"<div style='font-size:0.83rem;color:#475569;margin-top:3px'>{_desc}</div>" if _desc else "")
+                            + f"<div style='font-size:0.82rem;color:#555;margin-top:2px'>"
                             f"{sprint_summary}"
                             f"{'  ·  ' + hrs_label if hrs_label else ''}"
                             f"</div>"
@@ -1747,10 +1758,11 @@ if st.session_state.page == "Victory Road":
                                 del st.session_state[_wkey]
                             return sc
                         if st.button("แก้ไข Victory road", key=f"edit_{vr['id']}", use_container_width=True):
-                            st.session_state.editing_vr     = vr
-                            st.session_state.form_vr_name   = vr["name"]
-                            st.session_state.form_vr_level  = vr.get("level", LEVELS[5])
-                            st.session_state.form_road_type = vr.get("road_type", "cohort")
+                            st.session_state.editing_vr          = vr
+                            st.session_state.form_vr_name        = vr["name"]
+                            st.session_state.form_vr_description = vr.get("description", "")
+                            st.session_state.form_vr_level       = vr.get("level", LEVELS[5])
+                            st.session_state.form_road_type      = vr.get("road_type", "cohort")
                             st.session_state.form_sprints = [
                                 _parse_sprint_for_edit(_s)
                                 for _s in vr.get("sprints", [])

@@ -28,6 +28,7 @@ Victory Road คือ "ห้องเรียน" หนึ่งที่ม
 |---|---|---|---|
 | `id` | UUID | PK | auto-generated |
 | `name` | TEXT | NOT NULL | ชื่อ Victory Road |
+| `description` | TEXT | | คำอธิบาย Victory Road เช่น "กลุ่ม ม.3 เตรียมสอบ O-NET" |
 | `level` | TEXT | | ระดับชั้นนักเรียน เช่น "มัธยมศึกษาปีที่ 3" |
 | `road_type` | TEXT | | `"cohort"` = เรียนกลุ่ม, `"personalize"` = เรียนตัวต่อตัว |
 | `students` | JSONB | | array ของ student objects `[{id, nickname, name, ...}]` |

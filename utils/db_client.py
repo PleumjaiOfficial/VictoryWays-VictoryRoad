@@ -477,11 +477,12 @@ def create_victory_road(data: dict) -> dict:
         try:
             client = _get_client()
             payload = {
-                "name":      data["name"],
-                "level":     data.get("level", ""),
-                "road_type": data.get("road_type", "cohort"),
-                "students":  json.dumps(data.get("students", []), ensure_ascii=False),
-                "status":    data.get("status", "draft"),
+                "name":        data["name"],
+                "description": data.get("description", ""),
+                "level":       data.get("level", ""),
+                "road_type":   data.get("road_type", "cohort"),
+                "students":    json.dumps(data.get("students", []), ensure_ascii=False),
+                "status":      data.get("status", "draft"),
             }
             res = client.table("victory_roads").insert(payload).execute()
             vr = res.data[0] if res.data else {}
@@ -507,7 +508,7 @@ def update_victory_road(vr_id: str, data: dict) -> bool:
         try:
             client = _get_client()
             road_payload = {}
-            for k in ("name", "level", "road_type", "status"):
+            for k in ("name", "description", "level", "road_type", "status"):
                 if k in data and data[k] is not None:
                     road_payload[k] = data[k]
             if "students" in data:
